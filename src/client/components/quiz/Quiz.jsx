@@ -11,7 +11,7 @@ export default class Quiz extends Component {
       que_num: 0,
       crct_ans: 0,
       incrct_ans: 0,
-      random_que: [],
+      random_ques: [],
       ans: ""
     };
   }
@@ -21,39 +21,40 @@ export default class Quiz extends Component {
     try {
       await fetch("/api/questions")
         .then(res => res.json())
-        .then(data => this.getrandom_que(data.results));
+        .then(data => this.getRandomQuestions(data.results));
     } catch (e) {
       console.error(e.message);
     }
   }
 
   //Creating Random questions and randomizing the options
-  getrandom_que = questions => {
-    let random_que = this.state.random_que;
-    for (let i = 0; i < 3; i++) {
+  getRandomQuestions = questions => {
+    let random_ques = this.state.random_ques;
+    while (random_ques.length < 3) {
       const index = questions[Math.floor(Math.random() * questions.length)];
+      if (random_ques.includes(index)) continue;
       let options =
         index.incorrect_answers &&
         index.incorrect_answers
           .concat(index.correct_answer)
           .sort(() => Math.random() - 0.5);
       index["options"] = options;
-      random_que.push(index);
+      random_ques.push(index);
     }
-    this.setState({ random_que: random_que });
+    this.setState({ random_ques: random_ques });
   };
 
   // storing the results and incrementing the question
   onNext = () => {
-    const [que_num, crct_ans, incrct_ans, random_que, ans] = [
+    const [que_num, crct_ans, incrct_ans, random_ques, ans] = [
       this.state.que_num,
       this.state.crct_ans,
       this.state.incrct_ans,
-      this.state.random_que,
+      this.state.random_ques,
       this.state.ans
     ];
     if (
-      random_que[que_num].correct_answer.toLowerCase() === ans.toLowerCase()
+      random_ques[que_num].correct_answer.toLowerCase() === ans.toLowerCase()
     ) {
       this.setState({
         crct_ans: crct_ans + 1,
@@ -75,14 +76,14 @@ export default class Quiz extends Component {
   };
 
   render() {
-    const [que_num, crct_ans, incrct_ans, random_que, ans] = [
+    const [que_num, crct_ans, incrct_ans, random_ques, ans] = [
       this.state.que_num,
       this.state.crct_ans,
       this.state.incrct_ans,
-      this.state.random_que,
+      this.state.random_ques,
       this.state.ans
     ];
-    if (this.state.random_que.length < 1) {
+    if (this.state.random_ques.length < 1) {
       return <Spinner />;
     }
     return (
@@ -90,11 +91,11 @@ export default class Quiz extends Component {
         <h1>Welcome To Lucid's UI Assessment</h1>
         <div className="container">
           <div className="quiz-box">
-            <Question que_num={que_num} random_que={random_que} />
+            <Question que_num={que_num} random_ques={random_ques} />
 
             {que_num < 3 &&
-              random_que[que_num].type !== "text" &&
-              random_que[que_num].options.map((option, i) => {
+              random_ques[que_num].type !== "text" &&
+              random_ques[que_num].options.map((option, i) => {
                 return (
                   <label key={i} onClick={() => this.setState({ ans: option })}>
                     <input
@@ -112,7 +113,7 @@ export default class Quiz extends Component {
               })}
 
             {que_num < 3 ? (
-              random_que[que_num].type === "text" && (
+              random_ques[que_num].type === "text" && (
                 <input
                   className="input-text"
                   onChange={e => this.setState({ ans: e.target.value })}
@@ -120,7 +121,7 @@ export default class Quiz extends Component {
                 />
               )
             ) : (
-              <Summary summary={[crct_ans, incrct_ans, random_que]} />
+              <Summary summary={[crct_ans, incrct_ans, random_ques]} />
             )}
             <br />
             {que_num !== 3 ? (
